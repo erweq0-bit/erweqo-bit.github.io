@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>강릉여행</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#eef9ff;color:#123}
+.header{background:linear-gradient(135deg,#5ec8f7,#bcefff);color:white;padding:30px 18px 34px;border-radius:0 0 32px 32px;text-align:center}
+.header h1{margin:0;font-size:27px}
+.header p{margin:8px 0 0;font-size:14px}
+.wrap{max-width:760px;margin:auto;padding:18px}
+.tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:18px}
+.tab{border:0;border-radius:16px;padding:12px 6px;background:white;color:#168ac3;font-weight:900}
+.tab.active{background:#38bdf2;color:white}
+.page{display:none}.page.active{display:block}
+.day-title{margin:24px 0 14px;padding:10px 15px;background:#4bb8ec;color:white;border-radius:999px;display:inline-block;font-weight:900}
+.timeline{position:relative;padding-left:22px}.timeline:before{content:"";position:absolute;left:7px;top:0;bottom:0;width:3px;background:#9ddfff}
+.card{position:relative;background:white;border-radius:24px;padding:22px;margin-bottom:18px;box-shadow:0 8px 22px rgba(60,160,210,.18);border:1px solid #d9f3ff}
+.card:before{content:"";position:absolute;left:-21px;top:28px;width:13px;height:13px;background:#31aeea;border:3px solid white;border-radius:50%;box-shadow:0 0 0 3px #bcecff}
+.top{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.time{font-size:21px;font-weight:900;color:#168ac3}
+.type{font-size:12px;background:#e7f8ff;color:#168ac3;padding:5px 10px;border-radius:999px;font-weight:900}
+.place{margin:16px 0 10px;font-size:22px;font-weight:900}
+.memo{font-size:15px;line-height:1.8;color:#456;white-space:pre-line}
+.actions{display:flex;gap:7px;margin-top:16px}
+.btn{flex:1;text-align:center;text-decoration:none;border:0;background:#38bdf2;color:white;padding:9px 6px;border-radius:11px;font-weight:900;font-size:12px}
+.btn.sub{background:#eaf8ff;color:#168ac3}.btn.danger{background:#ffe6e6;color:#c0392b}
+.btn.check{background:#fff3b0;color:#7a5b00}.btn.checked{background:#b8f2d0;color:#087a3a}
+.destination{background:linear-gradient(135deg,#ffffff,#e5f8ff);border-radius:26px;padding:22px;margin-bottom:18px;box-shadow:0 8px 22px rgba(60,160,210,.15)}
+.destination h2{margin:0 0 8px;font-size:24px}.destination p{margin:0;color:#456;line-height:1.6}
+.map-preview{margin-top:16px;border-radius:22px;overflow:hidden;height:260px;border:1px solid #cdefff}.map-preview iframe{width:100%;height:100%;border:0}
+.section-title{margin:24px 0 14px;font-size:19px;color:#168ac3}
+.album-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;width:100%;padding:0}
+.album-card{width:100%;background:white;border-radius:22px;overflow:hidden;box-shadow:0 8px 22px rgba(60,160,210,.18);border:1px solid #d9f3ff;cursor:pointer}
+.album-thumb{aspect-ratio:1/1;background:linear-gradient(135deg,#8ddcff,#e8f8ff);display:flex;align-items:center;justify-content:center;font-size:42px;overflow:hidden}
+.album-thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.album-body{padding:14px}.album-meta{font-size:11px;font-weight:900;color:#168ac3;background:#e7f8ff;padding:5px 8px;border-radius:999px;display:inline-block;margin-bottom:8px}
+.album-title{font-size:17px;font-weight:900;margin-bottom:7px;line-height:1.3}.album-desc{font-size:13px;color:#456;line-height:1.5;min-height:40px;white-space:pre-line}
+.album-actions{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:12px}.album-actions .btn{font-size:11px;padding:8px 5px}
+.inputbox,select{width:100%;padding:13px;border-radius:14px;border:1px solid #bfeaff;margin-bottom:10px;font-size:15px;background:white}
+textarea.inputbox{min-height:100px}.form-card{background:white;border-radius:24px;padding:20px;box-shadow:0 8px 22px rgba(60,160,210,.18);margin-bottom:16px}
+.loading,.empty{text-align:center;padding:40px;color:#3996c4;font-weight:900}
+@media (min-width:600px){.album-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+</style>
+</head>
+
+<body>
+<div class="header">
+  <h1>강릉여행 시간표 🌊</h1>
+  <p>GitHub 저장 · 시간표 · 지도목록 · 모바일 수정</p>
+</div>
+
+<div class="wrap">
+  <div class="tabs">
+    <button class="tab active" onclick="showPage('schedule',this)">시간표</button>
+    <button class="tab" onclick="showPage('maps',this)">지도목록</button>
+    <button class="tab" onclick="showPage('edit',this)">수정</button>
+    <button class="tab" onclick="showPage('settings',this)">저장설정</button>
+  </div>
+
+  <div id="schedule" class="page active">
+    <div id="app" class="loading">불러오는 중...</div>
+  </div>
+
+  <div id="maps" class="page">
+    <div class="destination">
+      <h2 id="mapTitle">📍 메인 여행지: 강릉</h2>
+      <p id="mapDesc">장소 앨범을 누르면 위 지도 위치가 바뀝니다.</p>
+      <div class="map-preview">
+        <iframe id="mainMap" src="https://www.openstreetmap.org/export/embed.html?bbox=128.80,37.68,129.08,37.88&layer=mapnik&marker=37.7519,128.8761"></iframe>
+      </div>
+      <div class="actions">
+        <a class="btn" href="https://search.naver.com/search.naver?query=강릉 지도" target="_blank">강릉 지도보기</a>
+        <a class="btn sub" href="https://search.naver.com/search.naver?query=강릉 맛집" target="_blank">강릉 맛집</a>
+      </div>
+    </div>
+    <h3 class="section-title">🗂️ 시간표 장소 앨범</h3>
+    <div id="mapList" class="loading">장소 목록 불러오는 중...</div>
+  </div>
+
+  <div id="edit" class="page">
+    <div class="form-card">
+      <h3 id="formTitle">➕ 일정 추가</h3>
+      <input type="hidden" id="editIndex">
+      <input id="addDate" class="inputbox" placeholder="날짜 예: 1일차 / 5월 10일">
+      <input id="addTime" class="inputbox" placeholder="시간 예: 12:00">
+      <select id="addType">
+        <option value="일정">일정</option>
+        <option value="식당">식당</option>
+        <option value="카페">카페</option>
+        <option value="관광">관광</option>
+        <option value="숙소">숙소</option>
+        <option value="이동">이동</option>
+      </select>
+      <input id="addPlace" class="inputbox" placeholder="장소명">
+      <textarea id="addMemo" class="inputbox" placeholder="내용"></textarea>
+      <input id="addImg" class="inputbox" placeholder="이미지 URL 선택사항">
+      <div class="actions">
+        <button class="btn" onclick="saveScheduleItem()">임시반영</button>
+        <button class="btn sub" onclick="resetForm()">초기화</button>
+      </div>
+      <button class="btn" style="margin-top:10px;width:100%" onclick="saveToGitHub()">GitHub에 전체 저장</button>
+    </div>
+    <div id="editList"></div>
+  </div>
+
+  <div id="settings" class="page">
+    <div class="form-card">
+      <h3>🔐 GitHub 저장 설정</h3>
+      <p class="memo">보기는 누구나 가능하지만, 저장은 GitHub 토큰을 입력한 사람만 가능합니다. 토큰은 이 브라우저에만 저장됩니다.</p>
+      <input id="githubToken" class="inputbox" type="password" placeholder="GitHub Fine-grained Token">
+      <div class="actions">
+        <button class="btn" onclick="saveToken()">토큰 저장</button>
+        <button class="btn danger" onclick="clearToken()">토큰 삭제</button>
+      </div>
+      <p id="saveStatus" class="memo"></p>
+    </div>
+  </div>
+</div>
+
+<script>
+const GITHUB_OWNER = "본인아이디";
+const GITHUB_REPO = "저장소이름";
+const GITHUB_BRANCH = "main";
+const DATA_PATH = "schedule.json";
+
+let allData = [];
+let fileSha = "";
+
+function apiUrl(){
+  return `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${DATA_PATH}?ref=${GITHUB_BRANCH}`;
+}
+
+function showPage(id,btn){
+  document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
+  document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));
+  document.getElementById(id).classList.add("active");
+  btn.classList.add("active");
+}
+
+function safe(text){
+  return String(text || "").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#039;");
+}
+
+function toBase64Unicode(str){
+  return btoa(unescape(encodeURIComponent(str)));
+}
+
+function fromBase64Unicode(str){
+  return decodeURIComponent(escape(atob(str)));
+}
+
+function placeView(place){
+  return "https://search.naver.com/search.naver?query=" + encodeURIComponent(place + " 지도");
+}
+
+function placeSearch(place){
+  return "https://search.naver.com/search.naver?query=" + encodeURIComponent(place);
+}
+
+function getIcon(type){
+  if((type||"").includes("식당") || (type||"").includes("맛집")) return "🍽️";
+  if((type||"").includes("카페")) return "☕";
+  if((type||"").includes("숙소")) return "🏨";
+  if((type||"").includes("이동")) return "🚗";
+  if((type||"").includes("관광") || (type||"").includes("장소")) return "📍";
+  return "🌊";
+}
+
+function isChecked(key){
+  return localStorage.getItem("check_" + key)==="Y";
+}
+
+function toggleCheck(key,btn){
+  const checked=isChecked(key);
+  localStorage.setItem("check_" + key, checked ? "N" : "Y");
+  btn.classList.toggle("checked", !checked);
+  btn.textContent = !checked ? "완료" : "체크";
+}
+
+async function load(){
+  try{
+    const res = await fetch(apiUrl() + "&t=" + Date.now());
+    if(!res.ok) throw new Error("GitHub 데이터 로드 실패");
+    const meta = await res.json();
+    fileSha = meta.sha;
+
+    const jsonText = fromBase64Unicode(meta.content.replace(/\n/g,""));
+    allData = JSON.parse(jsonText || "[]");
+
+    renderAll();
+  }catch(e){
+    document.getElementById("app").innerHTML="<div class='empty'>일정을 불러오지 못했습니다.</div>";
+    document.getElementById("mapList").innerHTML="<div class='empty'>지도 목록을 불러오지 못했습니다.</div>";
+  }
+}
+
+function renderAll(){
+  renderSchedule();
+  renderMapList();
+  renderEditList();
+}
+
+function renderSchedule(){
+  let html="";
+  let currentDate="";
+
+  allData.forEach((item,index)=>{
+    if(item.date !== currentDate){
+      if(currentDate) html+="</div>";
+      currentDate=item.date;
+      html+=`<div class="day-title">${safe(item.date)}</div><div class="timeline">`;
+    }
+
+    const key=item.date + "_" + item.time + "_" + item.place;
+    const checked=isChecked(key);
+
+    html+=`
+      <div class="card">
+        <div class="top">
+          <div class="time">${safe(item.time || "시간 미정")}</div>
+          <div class="type">${safe(item.type || "일정")}</div>
+        </div>
+        <div class="place">${safe(item.place || "장소 미정")}</div>
+        <div class="memo">${safe(item.memo || "")}</div>
+        <div class="actions">
+          <a class="btn" href="${placeView(item.place)}" target="_blank">장소보기</a>
+          <a class="btn sub" href="${placeSearch(item.place)}" target="_blank">검색하기</a>
+          <button class="btn check ${checked ? "checked" : ""}" onclick="toggleCheck('${safe(key)}',this)">${checked ? "완료" : "체크"}</button>
+        </div>
+      </div>`;
+  });
+
+  if(html) html+="</div>";
+  document.getElementById("app").innerHTML = html || "<div class='empty'>등록된 일정이 없습니다.</div>";
+}
+
+function renderMapList(){
+  let html = `<div class="album-grid">`;
+
+  allData.forEach((item,index)=>{
+    if(!item.place) return;
+
+    const thumb = item.img
+      ? `<img src="${safe(item.img)}" alt="${safe(item.place)}" onerror="this.parentElement.innerHTML='${getIcon(item.type)}'">`
+      : getIcon(item.type);
+
+    html += `
+      <div class="album-card" onclick="focusPlace(${index})">
+        <div class="album-thumb">${thumb}</div>
+        <div class="album-body">
+          <div class="album-meta">${safe(item.date || "")} · ${safe(item.time || "시간 미정")}</div>
+          <div class="album-title">${safe(item.place)}</div>
+          <div class="album-desc">${safe(item.memo || "네이버에서 장소 정보를 확인해보세요.")}</div>
+          <div class="album-actions">
+            <a class="btn" onclick="event.stopPropagation()" href="${placeView(item.place)}" target="_blank">장소보기</a>
+            <a class="btn sub" onclick="event.stopPropagation()" href="${placeSearch(item.place)}" target="_blank">검색하기</a>
+          </div>
+        </div>
+      </div>`;
+  });
+
+  html += `</div>`;
+  document.getElementById("mapList").innerHTML = allData.length ? html : "<div class='empty'>등록된 장소가 없습니다.</div>";
+}
+
+async function focusPlace(index){
+  const item = allData[index];
+  if(!item || !item.place) return;
+
+  document.getElementById("mapTitle").textContent = "📍 " + item.place;
+  document.getElementById("mapDesc").textContent = "위치를 불러오는 중입니다...";
+
+  try{
+    const url = "https://nominatim.openstreetmap.org/search?format=json&limit=1&q=" + encodeURIComponent("강릉 " + item.place);
+    const res = await fetch(url);
+    const data = await res.json();
+
+    if(!data.length){
+      document.getElementById("mapDesc").textContent = "지도를 찾지 못했습니다. 장소보기 버튼을 이용해주세요.";
+      return;
+    }
+
+    const lat = parseFloat(data[0].lat);
+    const lon = parseFloat(data[0].lon);
+    const bbox = [lon - 0.01, lat - 0.008, lon + 0.01, lat + 0.008].join(",");
+
+    document.getElementById("mainMap").src =
+      `https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik&marker=${lat},${lon}`;
+
+    document.getElementById("mapDesc").textContent = `${item.date || ""} ${item.time || ""} · ${item.type || "일정"}`;
+  }catch(e){
+    document.getElementById("mapDesc").textContent = "지도 위치를 불러오지 못했습니다.";
+  }
+}
+
+function saveScheduleItem(){
+  const idx = document.getElementById("editIndex").value;
+  const item = {
+    date: document.getElementById("addDate").value.trim(),
+    time: document.getElementById("addTime").value.trim(),
+    type: document.getElementById("addType").value,
+    place: document.getElementById("addPlace").value.trim(),
+    memo: document.getElementById("addMemo").value.trim(),
+    img: document.getElementById("addImg").value.trim()
+  };
+
+  if(!item.date || !item.place){
+    alert("날짜와 장소는 필수입니다.");
+    return;
+  }
+
+  if(idx === ""){
+    allData.push(item);
+  }else{
+    allData[Number(idx)] = item;
+  }
+
+  allData.sort((a,b)=>(a.date+a.time).localeCompare(b.date+b.time));
+  resetForm();
+  renderAll();
+  alert("화면에 임시 반영되었습니다. 모두에게 보이려면 GitHub에 전체 저장을 누르세요.");
+}
+
+function editItem(index){
+  const item = allData[index];
+  document.getElementById("formTitle").textContent = "✏️ 일정 수정";
+  document.getElementById("editIndex").value = index;
+  document.getElementById("addDate").value = item.date || "";
+  document.getElementById("addTime").value = item.time || "";
+  document.getElementById("addType").value = item.type || "일정";
+  document.getElementById("addPlace").value = item.place || "";
+  document.getElementById("addMemo").value = item.memo || "";
+  document.getElementById("addImg").value = item.img || "";
+  document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
+  document.getElementById("edit").classList.add("active");
+}
+
+function deleteItem(index){
+  if(!confirm("이 일정을 삭제할까요?")) return;
+  allData.splice(index,1);
+  renderAll();
+  alert("화면에서 삭제되었습니다. 모두에게 반영하려면 GitHub에 전체 저장을 누르세요.");
+}
+
+function resetForm(){
+  document.getElementById("formTitle").textContent = "➕ 일정 추가";
+  document.getElementById("editIndex").value = "";
+  ["addDate","addTime","addPlace","addMemo","addImg"].forEach(id=>document.getElementById(id).value="");
+  document.getElementById("addType").value = "일정";
+}
+
+function renderEditList(){
+  let html = "<h3 class='section-title'>현재 일정</h3>";
+  allData.forEach((item,index)=>{
+    html += `
+      <div class="card">
+        <div class="top">
+          <div class="time">${safe(item.date)} · ${safe(item.time || "시간 미정")}</div>
+          <div class="type">${safe(item.type || "일정")}</div>
+        </div>
+        <div class="place">${safe(item.place)}</div>
+        <div class="memo">${safe(item.memo)}</div>
+        <div class="actions">
+          <button class="btn" onclick="editItem(${index})">수정</button>
+          <button class="btn danger" onclick="deleteItem(${index})">삭제</button>
+        </div>
+      </div>`;
+  });
+  document.getElementById("editList").innerHTML = html;
+}
+
+function saveToken(){
+  const token = document.getElementById("githubToken").value.trim();
+  localStorage.setItem("github_token", token);
+  document.getElementById("saveStatus").textContent = "토큰이 이 브라우저에 저장되었습니다.";
+}
+
+function clearToken(){
+  localStorage.removeItem("github_token");
+  document.getElementById("githubToken").value = "";
+  document.getElementById("saveStatus").textContent = "토큰을 삭제했습니다.";
+}
+
+async function saveToGitHub(){
+  const token = localStorage.getItem("github_token") || document.getElementById("githubToken").value.trim();
+
+  if(!token){
+    alert("저장설정 탭에서 GitHub 토큰을 먼저 입력하세요.");
+    return;
+  }
+
+  try{
+    const latest = await fetch(apiUrl(), {
+      headers: { Authorization: `Bearer ${token}` }
+    }).then(r=>r.json());
+
+    const content = JSON.stringify(allData, null, 2);
+
+    const res = await fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${DATA_PATH}`, {
+      method: "PUT",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Accept: "application/vnd.github+json",
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        message: "Update Gangneung trip schedule",
+        content: toBase64Unicode(content),
+        sha: latest.sha,
+        branch: GITHUB_BRANCH
+      })
+    });
+
+    if(!res.ok){
+      const err = await res.json();
+      throw new Error(err.message || "저장 실패");
+    }
+
+    alert("GitHub에 저장되었습니다. 다른 사람도 새로고침하면 반영됩니다.");
+    await load();
+  }catch(e){
+    alert("저장 실패: " + e.message);
+  }
+}
+
+document.getElementById("githubToken").value = localStorage.getItem("github_token") || "";
+load();
+</script>
+</body>
+</html>
